@@ -18,12 +18,24 @@ import java.util.concurrent.Executors;
 public class ImageLoader {
     // 圖片快取
     ImageCache mImageCache = new ImageCache();
+    // SD卡快取
+    DiskCache mDiskCache = new DiskCache();
+    // 是否使用SD卡快取
+    boolean isUseDiskCache = false;
+
     // 執行緒池，執行緒數量為 CPU 的數量
     ExecutorService mExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     // 加載圖片
     public void displayImage(final String url, final ImageView imageView){
+        Bitmap bitmap = isUseDiskCache ? mDiskCache.get(url) : mImageCache.get(url);
+
+        if(bitmap != null){
+            imageView.setImageBitmap(bitmap);
+            return;
+        }
         imageView.setTag(url);
+
         mExecutorService.submit(new Runnable() {
             @Override
             public void run() {
@@ -38,6 +50,10 @@ public class ImageLoader {
                 mImageCache.put(url, bitmap);
             }
         });
+    }
+
+    public void setUseDiskCache(boolean useDiskCache) {
+        isUseDiskCache = useDiskCache;
     }
 
     public Bitmap downloadImage(String imageUrl){
