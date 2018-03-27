@@ -20,22 +20,33 @@ public class ImageLoader {
     ImageCache mImageCache = new ImageCache();
     // SD卡快取
     DiskCache mDiskCache = new DiskCache();
-    // 是否使用SD卡快取
+    // 雙快取
+    DoubleCache mDoubleCache = new DoubleCache();
+    // 使用SD卡快取
     boolean isUseDiskCache = false;
-
+    // 使用雙快取
+    boolean isUseDoubleCache = false;
     // 執行緒池，執行緒數量為 CPU 的數量
     ExecutorService mExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
     // 加載圖片
     public void displayImage(final String url, final ImageView imageView){
-        Bitmap bitmap = isUseDiskCache ? mDiskCache.get(url) : mImageCache.get(url);
+        Bitmap bmp = null;
+        if(isUseDoubleCache){
+            bmp = mDoubleCache.get(url);
+        }else if(isUseDiskCache){
+            bmp = mDiskCache.get(url);
+        }else{
+            bmp = mImageCache.get(url);
+        }
 
-        if(bitmap != null){
-            imageView.setImageBitmap(bitmap);
+        if(bmp != null){
+            imageView.setImageBitmap(bmp);
             return;
         }
         imageView.setTag(url);
 
+        // 沒有快取，則提交給執行緒池進行非同步下載圖片
         mExecutorService.submit(new Runnable() {
             @Override
             public void run() {
@@ -54,6 +65,10 @@ public class ImageLoader {
 
     public void setUseDiskCache(boolean useDiskCache) {
         isUseDiskCache = useDiskCache;
+    }
+
+    public void setUseDoubleCache(boolean useDoubleCache) {
+        isUseDoubleCache = useDoubleCache;
     }
 
     public Bitmap downloadImage(String imageUrl){
