@@ -17,28 +17,11 @@ import java.util.concurrent.Executors;
 
 public class ImageLoader {
     // 圖片快取
-    LruCache<String, Bitmap> mImageCache;
-
+    ImageCache mImageCache = new ImageCache();
     // 執行緒池，執行緒數量為 CPU 的數量
     ExecutorService mExecutorService = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors());
 
-    public ImageLoader(){
-        initImageCache();
-    }
-
-    private void initImageCache() {
-        // 計算可使用的最大記憶體
-        final int maxMemory = (int) (Runtime.getRuntime().maxMemory() / 1024);
-        // 取1/4的可用記憶體作為快取
-        final int cacheSize = maxMemory / 4;
-        mImageCache = new LruCache<String, Bitmap>(cacheSize){
-            @Override
-            protected int sizeOf(String key, Bitmap bitmap) {
-                return bitmap.getRowBytes() * bitmap.getHeight() / 1024;
-            }
-        };
-    }
-
+    // 加載圖片
     public void displayImage(final String url, final ImageView imageView){
         imageView.setTag(url);
         mExecutorService.submit(new Runnable() {
